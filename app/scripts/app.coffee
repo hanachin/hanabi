@@ -1,4 +1,4 @@
-'use strict';
+'use strict'
 
 angular.module('hanabiApp', [
   'ngCookies',
@@ -6,13 +6,10 @@ angular.module('hanabiApp', [
   'ngSanitize',
   'ngRoute'
 ])
-  .config(function ($routeProvider) {
+  .config ($routeProvider) ->
     $routeProvider
-      .when('/', {
-        templateUrl: 'views/main.html',
+      .when '/',
+        templateUrl: 'views/main.html'
         controller: 'MainCtrl'
-      })
-      .otherwise({
+      .otherwise
         redirectTo: '/'
-      });
-  });
