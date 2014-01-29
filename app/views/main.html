@@ -8,27 +8,58 @@
 </div>
 
 <div class="jumbotron">
-  <h1>'Allo, 'Allo!</h1>
+  <h1>Hanabi</h1>
   <p class="lead">
-    <img src="images/yeoman.png" alt="I'm Yeoman"><br>
-    Always a pleasure scaffolding your apps.
+    <img src="images/hanabi.jpg" alt="打ち上げ花火"><br>
+    ペンさんがジェバンニしたからかっとなって徹夜した
   </p>
-  <p><a class="btn btn-lg btn-success" ng-href="#">Splendid!</a></p>
+  <p><button class="btn btn-lg btn-success" ng-click="start()" ng-hide="game">スタート</a></button>
 </div>
 
 <div class="row marketing">
-  <h4>HTML5 Boilerplate</h4>
-  <p>
-    HTML5 Boilerplate is a professional front-end template for building fast, robust, and adaptable web apps or sites.
+  <p ng-hide="!game">
+    ヒント: {{game.hints}}、爆発: {{game.explosions}}回
   </p>
-
-  <h4>Angular</h4>
-  <p>
-    AngularJS is a toolset for building the framework most suited to your application development.
-  </p>
-
-  <h4>Karma</h4>
-  <p>Spectacular Test Runner for JavaScript.</p>
+  <div ng-hide="cards.length == 0" ng-repeat="(color, cards) in game.fireworks">
+    <h2>{{color}}</h2>
+    <ul>
+      <li ng-repeat="card in cards" class="card">
+        <button class="btn btn-default card-{{card.color}}">
+          {{card.number}}
+        </button>
+      </li>
+    </ul>
+  </div>
+  <div ng-hide="!game || game.discardedFireworks.length == 0">
+    <h2>ゴミ</h2>
+    <ul>
+      <li ng-repeat="card in game.discardedFireworks" class="card">
+        <button class="btn btn-default card-{{card.color}}">
+          {{card.number}}
+        </button>
+      </li>
+    </ul>
+  </div>
+  <div ng-repeat="player in game.players">
+    <h4>{{player.name}}</h4>
+    <p>
+      <div ng-hide="!game.currentPlayer.canHints || player == game.currentPlayer">
+        <span class="btn btn-default" ng-repeat="color in player.cardColors()" ng-click="tellColor(player, color)">「{{color}}」を教える</span>
+        <span class="btn btn-default" ng-repeat="number in player.cardNumbers()" ng-click="tellNumber(player, number)">「{{number}}」を教える</span>
+      </div>
+      <ul>
+        <li class="card" ng-repeat="card in player.cards">
+          <div class="btn btn-default card-{{card.color}}" ng-disabled="!player.playable">
+            {{card.number}}
+            <div ng-hide="game.currentPlayer != player">
+              <span class="btn btn-default" ng-click="play(player, card)">打ち上げる</span>
+              <span class="btn btn-default" ng-click="discard(player, card)">捨てる</span>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </p>
+  </div>
 </div>
 
 <div class="footer">
