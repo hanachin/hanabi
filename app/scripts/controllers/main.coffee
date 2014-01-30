@@ -13,6 +13,9 @@ class Color
 class Card
   constructor: ({@color, @number}) ->
 
+  isRainbow: ->
+    @color is Color.RAINBOW
+
 class Player
   constructor: ({@name}) ->
     @playable          = no
@@ -30,14 +33,11 @@ class Player
   takeCard: (deck) ->
     @cards.push deck.takeCard()
 
-  play: (card) ->
+  play: (card, color = card.color) ->
     @playable        = no
     @cards           = _.without(@cards, card)
     @rememberedCards = _.without(@rememberedCards, card)
-    if card.color is Color.RAINBOW
-      # [TODO] - カードが虹色の時はユーザーに何色として使うか選択させたい
-    else
-      @trigger 'play', @, card, card.color
+    @trigger 'play', @, card, color
 
   discard: (card) ->
     @playable = no
@@ -194,12 +194,18 @@ class Hanabi
 
 angular.module('hanabiApp')
   .controller 'MainCtrl', ($scope) ->
+    $scope.Color = Color
+
     $scope.start = ->
       $scope.game = new Hanabi players: (new Player name: "player#{x}" for x in [1..4])
       $scope.game.start()
 
     $scope.play = (player, card) ->
       player.play(card)
+
+    $scope.playRainbow = (player, card, color) ->
+      console.log 'rainbow', color
+      player.play(card, color)
 
     $scope.discard = (player, card) ->
       player.discard(card)

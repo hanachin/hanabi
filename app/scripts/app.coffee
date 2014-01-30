@@ -1,10 +1,11 @@
 'use strict'
 
 angular.module('hanabiApp', [
-  'ngCookies',
-  'ngResource',
-  'ngSanitize',
+  'ngCookies'
+  'ngResource'
+  'ngSanitize'
   'ngRoute'
+  'ui.bootstrap'
 ])
   .config ($routeProvider) ->
     $routeProvider

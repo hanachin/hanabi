@@ -6,7 +6,6 @@
   </ul>
   <h3 class="text-muted">hanabi</h3>
 </div>
-
 <div class="jumbotron">
   <h1>Hanabi</h1>
   <p class="lead">
@@ -52,7 +51,15 @@
           <div class="btn btn-default card-{{card.color}}" ng-disabled="!player.playable">
             {{card.number}}
             <div ng-hide="game.currentPlayer != player">
-              <span class="btn btn-default" ng-click="play(player, card)">打ち上げる</span>
+              <span class="btn btn-default" ng-hide="card.isRainbow()" ng-click="play(player, card)">打ち上げる</span>
+              <div class="dropdown" ng-hide="!card.isRainbow()">
+                <span class="dropdown-toggle btn btn-default">打ち上げる</span>
+                <ul class="dropdown-menu">
+                  <li ng-repeat="color in Color.SINGLE_COLORS">
+                    <a ng-click="playRainbow(player, card, color)">{{color}}</a>
+                  </li>
+                </ul>
+              </div>
               <span class="btn btn-default" ng-click="discard(player, card)">捨てる</span>
             </div>
           </div>
