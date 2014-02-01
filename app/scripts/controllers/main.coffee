@@ -193,8 +193,31 @@ class Hanabi
     @lastTurnCount = @lastTurnCount + 1
 
 angular.module('hanabiApp')
-  .controller 'MainCtrl', ($scope) ->
+  .controller 'MainCtrl', ($scope, $PubNub) ->
     $scope.Color = Color
+
+    $scope.loggedIn    = no
+    $scope.channelName = 'geeaki'
+    $scope.playerName  = 'hanachin'
+
+    $scope.publish = (message...) ->
+      $PubNub.publish
+        channel: $scope.channelName
+        message: message
+
+    $scope.login = ->
+      $scope.loggedIn = yes
+      $PubNub.subscribe
+        channel: $scope.channelName
+        restore: no
+        disconnect: ->
+          console.log 'disconnected'
+        reconnect: ->
+          console.log 're-connected'
+        connect: ->
+          console.log 'connected'
+      , (message) ->
+        console.log message
 
     $scope.start = ->
       $scope.game = new Hanabi players: (new Player name: "player#{x}" for x in [1..4])

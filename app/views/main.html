@@ -1,3 +1,10 @@
+<div
+  pub-key="pub-c-5395b62d-4f9b-4d38-9696-0380d7d6c3d8"
+  sub-key="sub-c-c203824a-89bd-11e3-baad-02ee2ddab7fe"
+  ssl="off"
+  origin="pubsub.pubnub.com"
+  id="pubnub">
+</div>
 <div class="header">
   <ul class="nav nav-pills pull-right">
     <li class="active"><a ng-href="#">Home</a></li>
@@ -12,7 +19,12 @@
     <img src="images/hanabi.jpg" alt="打ち上げ花火"><br>
     ペンさんがジェバンニしたからかっとなって徹夜した
   </p>
-  <p><button class="btn btn-lg btn-success" ng-click="start()" ng-hide="game">スタート</a></button>
+  <p>
+    <input ng-model="channelName" type="text" ng-hide="loggedIn" placeholder="channel name" /><br ng-hide="loggedIn"/>
+    <input ng-model="playerName" type="text" ng-hide="loggedIn" placeholder="your name" /><br ng-hide="loggedIn"/>
+    <button class="btn btn-lg btn-warning" ng-click="login()" ng-hide="loggedIn">ログイン</button><br/>
+    <button class="btn btn-lg btn-success" ng-click="start()" ng-hide="!loggedIn || game">スタート</button>
+  </p>
 </div>
 
 <div class="row marketing">

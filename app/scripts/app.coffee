@@ -6,6 +6,7 @@ angular.module('hanabiApp', [
   'ngSanitize'
   'ngRoute'
   'ui.bootstrap'
+  'angular-pubnub'
 ])
   .config ($routeProvider) ->
     $routeProvider
