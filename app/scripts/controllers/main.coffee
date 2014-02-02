@@ -1,34 +1,37 @@
 'use strict'
 
 class Color
-  @RAINBOW: 'rainbow'
-  @RED:     'red'
-  @GREEN:   'green'
-  @WHITE:   'white'
-  @YELLOW:  'yellow'
-  @BLUE:    'blue'
+  @RAINBOW: 'x'
+  @RED:     'r'
+  @GREEN:   'g'
+  @WHITE:   'w'
+  @YELLOW:  'y'
+  @BLUE:    'b'
 
   @SINGLE_COLORS: [@RED, @GREEN, @WHITE, @YELLOW, @BLUE]
 
 class Card
   constructor: ({@color, @number}) ->
+    @id = "#{@color}#{@number}"
 
   isRainbow: ->
     @color is Color.RAINBOW
+
+  serialize: ->
+    @id
+
+  @load: (id) ->
+    new Card color: id[0], number: +id[1..]
 
 class Player
   constructor: ({@name}) ->
     @playable          = no
     @cards             = []
-    @others            = []
     @rememberedCards   = []
     @callbacks         = []
 
     @on 'turn', ({@canHints}) =>
       @playable = yes
-
-  discover: (other) ->
-    @others.push other
 
   takeCard: (deck) ->
     @cards.push deck.takeCard()
@@ -80,6 +83,20 @@ class Player
     @callbacks[eventName] ?= []
     @callbacks[eventName].push callback
 
+  serialize: ->
+    name:            @name
+    playable:        @playable
+    cards:           (c.serialize() for c in @cards)
+    rememberedCards: (c.serialize() for c in @cards)
+
+  @load: (data) ->
+    console.log 'Player.load', data
+    player = new Player name: data.name
+    player.playable        = data.playable
+    player.cards           = (Card.load card for card in data.cards)
+    player.rememberedCards = (Card.load card for card in data.rememberedCards)
+    player
+
 class Deck
   constructor: ->
     @cards = []
@@ -98,6 +115,14 @@ class Deck
   isEmpty: ->
     @cards.length is 0
 
+  serialize: ->
+    (c.serialize() for c in @cards)
+
+  @load: (cards) ->
+    deck = new Deck
+    deck.cards = (Card.load card for card in cards)
+    deck
+
 class ExplosionError extends Error
   constructor: ->
 
@@ -108,7 +133,9 @@ class Hanabi
   @MAX_EXPLOSION: 3
   @MAX_HINT:      8
 
-  constructor: ({@players}) ->
+  constructor: (options = {}) ->
+    {@players} = options
+    @players            ||= []
     @turn               = 0
     @deck               = new Deck
     @hints              = Hanabi.MAX_HINT
@@ -118,14 +145,10 @@ class Hanabi
     @discardedFireworks = []
 
   start: ->
-    @discoverEachOther()
     @listenPlayerEvents()
     @deck.shuffle()
     @deal()
     @nextTurn()
-
-  discoverEachOther: ->
-    player.discover other for other in @players when other isnt player for player in @players
 
   listenPlayerEvents: ->
     player.on eventName, _.bind @[eventName], @ for eventName in ['play', 'discard', 'hint'] for player in @players
@@ -192,32 +215,121 @@ class Hanabi
   lastTurnCountUp: ->
     @lastTurnCount = @lastTurnCount + 1
 
+  serialize: ->
+    console.log 'Hanabi#serialize'
+
+    # [XXX] - あとでFireworksクラス作ってserialize呼ぶだけにしたい
+    fireworks = {}
+    fireworks[k] = (c.serialize() for c in @fireworks[k]) for k, v of @fireworks
+
+    players:            (p.serialize() for p in @players)
+    turn:               @turn
+    deck:               @deck.serialize()
+    hints:              @hints
+    explosions:         @explosions
+    fireworks:          fireworks
+    lastTurnCount:      @lastTurnCount
+    discardedFireworks: (c.serialize() for c in @discardedFireworks)
+
+  @load: (data) ->
+    console.log 'Hanabi.load', data
+    hanabi                    = new Hanabi
+    hanabi.players            = (Player.load p for p in data.players)
+    hanabi.turn               = data.turn
+    hanabi.deck               = Deck.load data.deck
+    hanabi.hints              = data.hints
+    hanabi.explosions         = data.explosions
+    hanabi.fireworks          = {}
+    hanabi.fireworks[color]   = (Card.load c for c in data.fireworks[color]) for color in Color.SINGLE_COLORS
+    hanabi.lastTurnCount      = data.lastTurnCount
+    hanabi.discardedFireworks = (Card.load c for c in data.discardedFireworks)
+    hanabi
+
+class HanabiRoom
+  constructor: (@PubNub, @roomName) ->
+    @initialized = no
+    @PubNub.subscribe
+      channel: @roomName
+      restore: no
+      disconnect: ->
+        console.log 'disconnected'
+      reconnect: ->
+        console.log 're-connected'
+      connect: ->
+        console.log 'connected'
+    , ({eventName, data}) =>
+      console.log 'event', eventName, data
+      switch eventName
+        when 'ping'  then @pong(data)
+        when 'pong'  then @connected(data)
+        when 'login' then @addPlayer(data)
+
+  connected: (data) ->
+    console.log 'connected', data
+    clearTimeout @connectedTimeoutId if @connectedTimeoutId
+    @initialized = yes
+    @restore data
+    @connectedCallback()
+
+  connect: (@connectedCallback) ->
+    console.log 'connect'
+    @connectedTimeoutId = setTimeout =>
+      console.log 'connect timeout'
+      @setup()
+      @connectedCallback()
+    , 3000
+    @ping()
+
+  ping: ->
+    console.log 'ping'
+    @publish 'ping'
+
+  pong: ->
+    return unless @initialized
+    console.log 'pong'
+    @publish 'pong', @hanabi.serialize()
+
+  setup: ->
+    console.log 'setup'
+    @initialized = yes
+    @hanabi = new Hanabi
+    console.log JSON.stringify(@hanabi.serialize()).length
+
+  restore: (data) ->
+    console.log 'restore', data
+    @hanabi = Hanabi.load data
+
+  publish: (eventName, data) ->
+    console.log 'publish', eventName, data
+    @PubNub.publish
+      channel: @roomName
+      message: { eventName: eventName, data: data }
+
+  login: (name) ->
+    console.log 'login'
+    return player if player = _.find(@hanabi.players, (p) -> p.name is name)
+    player = new Player name: name
+    @publish 'login', player.serialize()
+    player
+
+  addPlayer: (data) ->
+    player = Player.load data
+    @hanabi.players.push player
+
+
 angular.module('hanabiApp')
   .controller 'MainCtrl', ($scope, $PubNub) ->
     $scope.Color = Color
 
-    $scope.loggedIn    = no
-    $scope.channelName = 'geeaki'
+    $scope.roomName = 'geeaki'
     $scope.playerName  = 'hanachin'
 
-    $scope.publish = (message...) ->
-      $PubNub.publish
-        channel: $scope.channelName
-        message: message
-
     $scope.login = ->
-      $scope.loggedIn = yes
-      $PubNub.subscribe
-        channel: $scope.channelName
-        restore: no
-        disconnect: ->
-          console.log 'disconnected'
-        reconnect: ->
-          console.log 're-connected'
-        connect: ->
-          console.log 'connected'
-      , (message) ->
-        console.log message
+      $scope.hanabiRoom = new HanabiRoom $PubNub, $scope.roomName
+      $scope.hanabiRoom.connect ->
+        console.log $scope.hanabiRoom.hanabi
+        $scope.$apply ->
+          $scope.player = $scope.hanabiRoom.login $scope.playerName
 
     $scope.start = ->
       $scope.game = new Hanabi players: (new Player name: "player#{x}" for x in [1..4])

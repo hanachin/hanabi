@@ -20,10 +20,13 @@
     ペンさんがジェバンニしたからかっとなって徹夜した
   </p>
   <p>
-    <input ng-model="channelName" type="text" ng-hide="loggedIn" placeholder="channel name" /><br ng-hide="loggedIn"/>
-    <input ng-model="playerName" type="text" ng-hide="loggedIn" placeholder="your name" /><br ng-hide="loggedIn"/>
-    <button class="btn btn-lg btn-warning" ng-click="login()" ng-hide="loggedIn">ログイン</button><br/>
-    <button class="btn btn-lg btn-success" ng-click="start()" ng-hide="!loggedIn || game">スタート</button>
+    <ul>
+      <li ng-repeat="player in hanabiRoom.hanabi.players">{{player.name}}</li>
+    </ul>
+    <input ng-model="roomName" type="text" ng-hide="hanabiRoom" placeholder="room name" /><br ng-hide="hanabiRoom"/>
+    <input ng-model="playerName" type="text" ng-hide="hanabiRoom" placeholder="your name" /><br ng-hide="hanabiRoom"/>
+    <button class="btn btn-lg btn-warning" ng-click="login()" ng-hide="hanabiRoom">ログイン</button><br/>
+    <button class="btn btn-lg btn-success" ng-click="start()" ng-hide="!hanabiRoom || game">スタート</button>
   </p>
 </div>
 
