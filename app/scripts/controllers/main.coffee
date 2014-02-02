@@ -34,7 +34,9 @@ class Player
       @playable = yes
 
   takeCard: (deck) ->
-    @cards.push deck.takeCard()
+    card = deck.takeCard()
+    @cards.push card
+    @trigger 'takeCard', @, card
 
   play: (card, color = card.color) ->
     @playable        = no
@@ -145,6 +147,10 @@ class Hanabi
     @lastTurnCount      = 0
     @discardedFireworks = []
 
+  login: (name) ->
+    return player if (player = _.find(@players, (p) -> p.name is name))
+    @players.push new Player name: name
+
   start: ->
     @listenPlayerEvents()
     @deal()
@@ -248,37 +254,42 @@ class Hanabi
 class HanabiRoom
   constructor: (@PubNub, @roomName) ->
     @initialized = no
+    @connected   = no
     @PubNub.subscribe
       channel: @roomName
       restore: no
       disconnect: ->
-        console.log 'disconnected'
+        console.log 'PubNub disconnected'
       reconnect: ->
-        console.log 're-connected'
-      connect: ->
-        console.log 'connected'
+        console.log 'PubNub re-connected'
+      connect: =>
+        console.log 'PubNub connected'
+        @connected = yes
+
     , ({eventName, data}) =>
       console.log 'event', eventName, data
       switch eventName
-        when 'ping'  then @pong(data)
-        when 'pong'  then @connected(data)
-        when 'login' then @addPlayer(data)
+        when 'ping' then @pong() && @sync()
+        when 'pong' then @clearHanabiSetupTimeoutId()
+        when 'sync' then @restore(data)
 
-  connected: (data) ->
-    console.log 'connected', data
-    clearTimeout @connectedTimeoutId if @connectedTimeoutId
-    @initialized = yes
-    @restore data
-    @connectedCallback()
+  clearHanabiSetupTimeoutId: ->
+    console.log 'clearHanabiSetupTimeoutId'
+    clearTimeout @hanabiSetupTimeoutId if @hanabiSetupTimeoutId
 
-  connect: (@connectedCallback) ->
+  connect: (@hanabiInitializedCallback) ->
     console.log 'connect'
-    @connectedTimeoutId = setTimeout =>
-      console.log 'connect timeout'
-      @setup()
-      @connectedCallback()
-    , 3000
-    @ping()
+    @connectIntervalId = setInterval =>
+      console.log 'connect interval'
+      return unless @connected
+      clearInterval @connectIntervalId
+      @hanabiSetupTimeoutId = setTimeout =>
+        console.log 'connect timeout'
+        @setup()
+        @hanabiInitializedCallback()
+      , 3000
+      @ping()
+    , 1000
 
   ping: ->
     console.log 'ping'
@@ -287,17 +298,23 @@ class HanabiRoom
   pong: ->
     return unless @initialized
     console.log 'pong'
-    @publish 'pong', @hanabi.serialize()
+    @publish 'pong'
+    yes
+
+  sync: ->
+    @publish 'sync', @hanabi.serialize()
 
   setup: ->
     console.log 'setup'
     @initialized = yes
     @hanabi = new Hanabi
-    console.log JSON.stringify(@hanabi.serialize()).length
 
   restore: (data) ->
     console.log 'restore', data
     @hanabi = Hanabi.load data
+    unless @initialized
+      @initialized = yes
+      @hanabiInitializedCallback()
 
   publish: (eventName, data) ->
     console.log 'publish', eventName, data
@@ -305,35 +322,26 @@ class HanabiRoom
       channel: @roomName
       message: { eventName: eventName, data: data }
 
-  login: (name) ->
-    console.log 'login'
-    return player if player = _.find(@hanabi.players, (p) -> p.name is name)
-    player = new Player name: name
-    @publish 'login', player.serialize()
-    player
-
-  addPlayer: (data) ->
-    player = Player.load data
-    @hanabi.players.push player
-
-
 angular.module('hanabiApp')
   .controller 'MainCtrl', ($scope, $PubNub) ->
     $scope.Color = Color
 
-    $scope.roomName = 'geeaki'
+    $scope.roomName    = 'geeaki'
     $scope.playerName  = 'hanachin'
+    $scope.loggedIn    = no
 
     $scope.login = ->
+      return if $scope.loggedIn
+      console.log '$scope.login'
+      $scope.loggedIn = yes
       $scope.hanabiRoom = new HanabiRoom $PubNub, $scope.roomName
       $scope.hanabiRoom.connect ->
-        console.log $scope.hanabiRoom.hanabi
         $scope.$apply ->
-          $scope.player = $scope.hanabiRoom.login $scope.playerName
+          $scope.hanabiRoom.hanabi.login $scope.playerName
+          $scope.hanabiRoom.sync()
 
     $scope.start = ->
-      $scope.game = new Hanabi players: (new Player name: "player#{x}" for x in [1..4])
-      $scope.game.start()
+      $scope.hanabiRoom.hanabi.start()
 
     $scope.play = (player, card) ->
       player.play(card)
