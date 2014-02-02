@@ -138,6 +138,7 @@ class Hanabi
     @players            ||= []
     @turn               = 0
     @deck               = new Deck
+    @deck.shuffle()
     @hints              = Hanabi.MAX_HINT
     @explosions         = 0
     @fireworks          = _.object Color.SINGLE_COLORS, ([] for _i in [1..Color.SINGLE_COLORS.length])
@@ -146,7 +147,6 @@ class Hanabi
 
   start: ->
     @listenPlayerEvents()
-    @deck.shuffle()
     @deal()
     @nextTurn()
 
