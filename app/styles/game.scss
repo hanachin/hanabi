@@ -1,25 +1,25 @@
 .card {
   display: inline-block;
 
-  .card-rainbow {
+  .card-x {
     background: black;
   }
-  .card-red {
+  .card-r {
     background: red;
   }
-  .card-green {
+  .card-g {
     background: green;
   }
-  .card-white {
+  .card-w {
     background: white;
   }
-  .card-yellow {
+  .card-y {
     background: yellow;
   }
-  .card-blue {
+  .card-b {
     background: blue;
   }
-  .card-rainbow, .card-blue, .card-red, .card-green {
+  .card-x, .card-b, .card-r, .card-g {
     color: white;
   }
 }
