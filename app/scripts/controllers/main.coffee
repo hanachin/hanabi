@@ -229,6 +229,7 @@ class Hanabi
     fireworks[k] = (c.serialize() for c in @fireworks[k]) for k, v of @fireworks
 
     players:            (p.serialize() for p in @players)
+    currentPlayerName:  @currentPlayer?.name
     turn:               @turn
     deck:               @deck.serialize()
     hints:              @hints
@@ -241,6 +242,7 @@ class Hanabi
     console.log 'Hanabi.load', data
     hanabi                    = new Hanabi
     hanabi.players            = (Player.load p for p in data.players)
+    hanabi.currentPlayer      = hanabi.login(data.currentPlayerName) if data.currentPlayerName
     hanabi.turn               = data.turn
     hanabi.deck               = Deck.load data.deck
     hanabi.hints              = data.hints
@@ -287,9 +289,9 @@ class HanabiRoom
         console.log 'connect timeout'
         @setup()
         @hanabiInitializedCallback()
-      , 3000
+      , 1000
       @ping()
-    , 1000
+    , 100
 
   ping: ->
     console.log 'ping'
@@ -342,6 +344,7 @@ angular.module('hanabiApp')
 
     $scope.start = ->
       $scope.hanabiRoom.hanabi.start()
+      $scope.hanabiRoom.sync()
 
     $scope.play = (player, card) ->
       player.play(card)
