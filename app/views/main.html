@@ -69,7 +69,10 @@
           <div class="btn btn-default card-{{card.color}}" ng-disabled="!player.playable">
           <span ng-hide="player.name == playerName">{{card.number}}</span>
             <div ng-hide="player.name != playerName">
-              <span class="btn btn-default" ng-hide="card.isRainbow()" ng-click="play(card)">打ち上げる</span>
+              <div ng-hide="card.isRainbow()">
+                <span class="btn btn-default" ng-click="play(card)">打ち上げる</span>
+                <span class="btn btn-default" ng-click="discard(card)">捨てる</span>
+              </div>
               <div class="dropdown" ng-hide="!card.isRainbow()">
                 <span class="dropdown-toggle btn btn-default">打ち上げる</span>
                 <span class="btn btn-default" ng-click="discard(card)">捨てる</span>
