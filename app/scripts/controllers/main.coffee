@@ -239,6 +239,7 @@ class Hanabi
     @currentPlayer = @nextPlayer()
     @currentPlayer.trigger 'turn'
     @turn = @turn + 1
+    @message = ''
 
   lastTurnCountUp: ->
     @lastTurnCount = @lastTurnCount + 1
