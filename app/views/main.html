@@ -72,13 +72,13 @@
               <span class="btn btn-default" ng-hide="card.isRainbow()" ng-click="play(card)">打ち上げる</span>
               <div class="dropdown" ng-hide="!card.isRainbow()">
                 <span class="dropdown-toggle btn btn-default">打ち上げる</span>
+                <span class="btn btn-default" ng-click="discard(card)">捨てる</span>
                 <ul class="dropdown-menu">
                   <li ng-repeat="color in Color.SINGLE_COLORS">
                     <a ng-click="playRainbow(card, color)">{{color}}</a>
                   </li>
                 </ul>
               </div>
-              <span class="btn btn-default" ng-click="discard(card)">捨てる</span>
             </div>
           </div>
         </li>

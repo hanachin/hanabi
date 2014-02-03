@@ -62,27 +62,19 @@ class Player
 
   tellColor: (other, color) ->
     cards = _.select other.cards, (card) -> card.color is color || card.color is Color.RAINBOW
-    other.rememberColor cards: cards, color: color
-    @trigger 'hint'
+    other.remember cards
+    @trigger 'hint', other.name, cards, 'color', color
 
   tellNumber: (other, number) ->
     cards = _.select other.cards, (card) -> card.number is number
-    other.rememberNumber cards: cards, number: number
-    @trigger 'hint'
+    other.remember cards
+    @trigger 'hint', other.name, cards, 'number', number
 
   isRemembered: (card) ->
     _.some @rememberedCards, (c) -> c.id is card.id
 
   remember: (cards) ->
     @rememberedCards.push card for card in cards when not @isRemembered card
-
-  rememberColor: ({cards, color}) ->
-    @remember cards
-    @trigger 'rememberColor', @name, cards
-
-  rememberNumber: ({cards, number}) ->
-    @remember cards
-    @trigger 'rememberNumber', @name, cards
 
   trigger: (eventName, rest...) ->
     callback rest... for callback in (@callbacks[eventName] ? [])
@@ -173,7 +165,7 @@ class Hanabi
     @nextTurn()
 
   listenPlayerEvents: ->
-    player.on eventName, _.bind @[eventName], @ for eventName in ['play', 'discard', 'hint', 'rememberColor', 'rememberNumber'] for player in @players
+    player.on eventName, _.bind @[eventName], @ for eventName in ['play', 'discard', 'hint'] for player in @players
 
   deal: ->
     player.takeCard @deck for _ in [1..4] for player in @players
@@ -202,16 +194,20 @@ class Hanabi
     player.takeCard @deck unless @deck.isEmpty()
     @nextTurn()
 
-  hint: ->
+  hint: (playerName, cards, method, hintVal) ->
+    player = @player playerName
+    switch method
+      when 'color'  then @showColorHint player, cards, hintVal
+      when 'number' then @showNumberHint player, cards, hintVal
     @loseHint()
     @nextTurn()
 
+  showColorHint: (player, cards, color) ->
+
+  showNumberHint: (player, cards, number) ->
+
   loseHint: ->
     @hints = @hints - 1
-
-  rememberColor: (playerName, cards) ->
-
-  rememberNumber: (playerName, cards) ->
 
   fire: (card, color) ->
     return @fireworks[color].push(card) if (!@isFireworksStared(color) && card.number is 1) || @lastFireworks(color)?.number is card.number - 1
