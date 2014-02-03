@@ -1,0 +1,19 @@
+{
+  "name": "angular-pubnub",
+  "version": "0.0.8",
+  "main": "angular-pubnub.js",
+  "dependencies": {
+    "angular": "~1.2.0-rc.2"
+  },
+  "homepage": "https://github.com/gdi2290/angular-pubnub",
+  "_release": "0.0.8",
+  "_resolution": {
+    "type": "version",
+    "tag": "v0.0.8",
+    "commit": "c5d753f453cb8141aefd5d02d5892a16b06c0d4a"
+  },
+  "_source": "git://github.com/gdi2290/angular-pubnub.git",
+  "_target": "~0.0.8",
+  "_originalSource": "angular-pubnub",
+  "_direct": true
+}
