@@ -20,6 +20,7 @@
     ペンさんがジェバンニしたからかっとなって徹夜した
   </p>
   <p>
+    <span ng-hide="!hanabiRoom.hanabi.started">いまの番: {{hanabiRoom.hanabi.currentPlayer.name}}</span><br/>
     <span ng-hide="!hanabiRoom.hanabi.started">あなた: {{playerName}}</span><br/>
     <ul ng-hide="hanabiRoom.hanabi.started">
       <li ng-repeat="player in hanabiRoom.hanabi.players">{{player.name}}</li>
@@ -36,6 +37,7 @@
     ヒント: {{hanabiRoom.hanabi.hints}}、爆発: {{hanabiRoom.hanabi.explosions}}回、残り: {{hanabiRoom.hanabi.deck.cards.length}}枚<br/>
     プレイヤー: <span ng-hide="!hanabiRoom.hanabi.started" ng-repeat="player in hanabiRoom.hanabi.players">{{player.name}}、</span>
   </p>
+  <h1 ng-hide="!hanabiRoom.hanabi.message">{{hanabiRoom.hanabi.message}}</h1>
   <div class="fireworks" ng-hide="cards.length == 0" ng-repeat="(color, cards) in hanabiRoom.hanabi.fireworks">
     <h2>{{Color.label(color)}}</h2>
     <ul>
@@ -61,13 +63,13 @@
     <h4>{{player.name}}</h4>
     <p>
       <div ng-hide="hanabiRoom.hanabi.hints == 0 || playerName == player.name">
-        <span class="btn btn-default" ng-repeat="color in player.cardColors()" ng-click="tellColor(player, color)" ng-disabled="hanabiRoom.hanabi.currentPlayer.name != player.name">「{{Color.label(color)}}」を教える</span>
-        <span class="btn btn-default" ng-repeat="number in player.cardNumbers()" ng-click="tellNumber(player, number)" ng-disabled="hanabiRoom.hanabi.currentPlayer.name != player.name">「{{number}}」を教える</span>
+        <span class="btn btn-default" ng-disabled="hanabiRoom.hanabi.currentPlayer.name != playerName" ng-repeat="color in player.cardColors()" ng-click="tellColor(player, color)">「{{Color.label(color)}}」を教える</span>
+        <span class="btn btn-default" ng-disabled="hanabiRoom.hanabi.currentPlayer.name != playerName" ng-repeat="number in player.cardNumbers()" ng-click="tellNumber(player, number)">「{{number}}」を教える</span>
       </div>
       <ul>
         <li class="card player-{{playerName == player.name}}" ng-repeat="card in player.cards">
           <div class="btn btn-default card-{{card.color}}" ng-disabled="!player.playable">
-          <span ng-hide="player.name == playerName">{{card.number}}</span>
+            <span ng-hide="player.name == playerName">{{card.number}}</span>
             <div ng-hide="player.name != playerName">
               <div ng-hide="card.isRainbow()">
                 <span class="btn btn-default" ng-click="play(card)">打ち上げる</span>

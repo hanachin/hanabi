@@ -63,12 +63,12 @@ class Player
   tellColor: (other, color) ->
     cards = _.select other.cards, (card) -> card.color is color || card.color is Color.RAINBOW
     other.remember cards
-    @trigger 'hint', other.name, cards, 'color', color
+    @trigger 'hint', other.name, 'color', color
 
   tellNumber: (other, number) ->
     cards = _.select other.cards, (card) -> card.number is number
     other.remember cards
-    @trigger 'hint', other.name, cards, 'number', number
+    @trigger 'hint', other.name, 'number', number
 
   isRemembered: (card) ->
     _.some @rememberedCards, (c) -> c.id is card.id
@@ -194,17 +194,19 @@ class Hanabi
     player.takeCard @deck unless @deck.isEmpty()
     @nextTurn()
 
-  hint: (playerName, cards, method, hintVal) ->
+  hint: (playerName, method, hintVal) ->
     player = @player playerName
     switch method
-      when 'color'  then @showColorHint player, cards, hintVal
-      when 'number' then @showNumberHint player, cards, hintVal
+      when 'color'  then @showColorHint player, hintVal
+      when 'number' then @showNumberHint player, hintVal
     @loseHint()
     @nextTurn()
 
-  showColorHint: (player, cards, color) ->
+  showColorHint: (player, color) ->
+    @message = "#{player.name}の" + ("左から#{i+1}番目" for card, i in player.cards when card.color is color).join('、') + "が#{Color.label(color)}です"
 
-  showNumberHint: (player, cards, number) ->
+  showNumberHint: (player, number) ->
+    @message = "#{player.name}の" + ("左から#{i+1}番目" for card, i in player.cards when card.number is number).join('、') + "が#{number}です"
 
   loseHint: ->
     @hints = @hints - 1
@@ -249,6 +251,7 @@ class Hanabi
     fireworks[k] = (c.serialize() for c in @fireworks[k]) for k, v of @fireworks
 
     started:            @started
+    message:            @message
     players:            (p.serialize() for p in @players)
     currentPlayerName:  @currentPlayer?.name
     turn:               @turn
@@ -263,6 +266,7 @@ class Hanabi
     console.log 'Hanabi.load', data
     hanabi                    = new Hanabi
     hanabi.started            = data.started
+    hanabi.message            = data.message
     hanabi.players            = (Player.load p for p in data.players)
     hanabi.currentPlayer      = hanabi.login(data.currentPlayerName) if data.currentPlayerName
     hanabi.turn               = data.turn

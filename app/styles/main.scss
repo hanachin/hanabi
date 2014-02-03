@@ -90,4 +90,12 @@ body {
     }
 }
 
+
+/* Responsive: Portrait tablets and up */
+@media screen and (min-width: 1024px) {
+    .container {
+        max-width: 960px;
+    }
+}
+
 @import 'game.scss';
