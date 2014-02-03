@@ -26,12 +26,12 @@
     <input ng-model="roomName" type="text" ng-hide="hanabiRoom" placeholder="room name" /><br ng-hide="hanabiRoom"/>
     <input ng-model="playerName" type="text" ng-hide="hanabiRoom" placeholder="your name" /><br ng-hide="hanabiRoom"/>
     <button class="btn btn-lg btn-warning" ng-click="login()" ng-hide="hanabiRoom">ログイン</button><br/>
-    <button class="btn btn-lg btn-success" ng-click="start()" ng-hide="!hanabiRoom || game">スタート</button>
+    <button class="btn btn-lg btn-success" ng-click="start()" ng-hide="!hanabiRoom || hanabiRoom.hanabi.started">スタート</button>
   </p>
 </div>
 
 <div class="row marketing">
-  <p ng-hide="!game">
+  <p ng-hide="!hanabiRoom.hanabi">
     ヒント: {{hanabiRoom.hanabi.hints}}、爆発: {{hanabiRoom.hanabi.explosions}}回
   </p>
   <div ng-hide="cards.length == 0" ng-repeat="(color, cards) in hanabiRoom.hanabi.fireworks">
@@ -44,7 +44,7 @@
       </li>
     </ul>
   </div>
-  <div ng-hide="!game || hanabiRoom.hanabi.discardedFireworks.length == 0">
+  <div ng-hide="!hanabiRoom.hanabi || hanabiRoom.hanabi.discardedFireworks.length == 0">
     <h2>ゴミ</h2>
     <ul>
       <li ng-repeat="card in hanabiRoom.hanabi.discardedFireworks" class="card">
@@ -57,25 +57,25 @@
   <div ng-repeat="player in hanabiRoom.hanabi.players">
     <h4>{{player.name}}</h4>
     <p>
-      <div ng-hide="!hanabiRoom.hanabi.currentPlayer.canHints || player == hanabiRoom.hanabi.currentPlayer">
+      <div ng-hide="!hanabiRoom.hanabi.currentPlayer.canHints || playerName != hanabiRoom.hanabi.currentPlayer.name">
         <span class="btn btn-default" ng-repeat="color in player.cardColors()" ng-click="tellColor(player, color)">「{{color}}」を教える</span>
         <span class="btn btn-default" ng-repeat="number in player.cardNumbers()" ng-click="tellNumber(player, number)">「{{number}}」を教える</span>
       </div>
       <ul>
         <li class="card" ng-repeat="card in player.cards">
           <div class="btn btn-default card-{{card.color}}" ng-disabled="!player.playable">
-            {{card.number}}
-            <div ng-hide="hanabiRoom.hanabi.currentPlayer != player">
-              <span class="btn btn-default" ng-hide="card.isRainbow()" ng-click="play(player, card)">打ち上げる</span>
+          <span ng-hide="player.name == playerName">{{card.number}}</span>
+            <div ng-hide="player.name != playerName">
+              <span class="btn btn-default" ng-hide="card.isRainbow()" ng-click="play(card)">打ち上げる</span>
               <div class="dropdown" ng-hide="!card.isRainbow()">
                 <span class="dropdown-toggle btn btn-default">打ち上げる</span>
                 <ul class="dropdown-menu">
                   <li ng-repeat="color in Color.SINGLE_COLORS">
-                    <a ng-click="playRainbow(player, card, color)">{{color}}</a>
+                    <a ng-click="playRainbow(card, color)">{{color}}</a>
                   </li>
                 </ul>
               </div>
-              <span class="btn btn-default" ng-click="discard(player, card)">捨てる</span>
+              <span class="btn btn-default" ng-click="discard(card)">捨てる</span>
             </div>
           </div>
         </li>

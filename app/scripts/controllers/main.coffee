@@ -36,19 +36,20 @@ class Player
   takeCard: (deck) ->
     card = deck.takeCard()
     @cards.push card
-    @trigger 'takeCard', @, card
+    @trigger 'takeCard', @name, card
 
   play: (card, color = card.color) ->
     @playable        = no
-    @cards           = _.without(@cards, (c) -> c.id is card.id)
-    @rememberedCards = _.without(@rememberedCards, (c) -> c.id is card.id)
-    @trigger 'play', @, card, color
+    @cards           = _.reject(@cards, (c) -> c.id is card.id)
+    @rememberedCards = _.reject(@rememberedCards, (c) -> c.id is card.id)
+    @trigger 'play', @name, card, color
 
   discard: (card) ->
-    console.log 'Player#discard', card
+    console.log 'Player#discard', card, @cards
     @playable = no
-    @cards    = _.without(@cards, (c) -> c.id is card.id)
-    @trigger 'discard', @, card
+    @cards    = _.reject(@cards, (c) -> c.id is card.id)
+    console.log 'Player#discard after', card, @cards
+    @trigger 'discard', @name, card
 
   tellColor: (other, color) ->
     cards = _.select other.cards, (card) -> card.color is color || card.color is Color.RAINBOW
@@ -61,7 +62,7 @@ class Player
     @trigger 'hint'
 
   isRemembered: (card) ->
-    _.contains @rememberedCards, (c) -> c.id is card.id
+    _.some @rememberedCards, (c) -> c.id is card.id
 
   remember: (memory) ->
     @rememberedCards.push memory.card unless @isRemembered memory.card
@@ -156,6 +157,7 @@ class Hanabi
     _.find(@players, (player) -> player.name is name)
 
   start: ->
+    @started = yes
     @listenPlayerEvents()
     @deal()
     @nextTurn()
@@ -166,7 +168,8 @@ class Hanabi
   deal: ->
     player.takeCard @deck for _ in [1..4] for player in @players
 
-  play: (player, card, color) ->
+  play: (playerName, card, color) ->
+    player = @player playerName
     try
       @fire card, color
       @recoverHints() if @isFireworksFinished(color)
@@ -180,8 +183,11 @@ class Hanabi
     player.takeCard @deck unless @deck.isEmpty()
     @nextTurn()
 
-  discard: (player, card) ->
+  discard: (playerName, card) ->
+    player = @player playerName
+    console.log 'Hanabi#discard', player.name, card
     @discardedFireworks.push card
+    console.log @discardedFireworks
     @recoverHints()
     player.takeCard @deck unless @deck.isEmpty()
     @nextTurn()
@@ -232,6 +238,7 @@ class Hanabi
     fireworks = {}
     fireworks[k] = (c.serialize() for c in @fireworks[k]) for k, v of @fireworks
 
+    started:            @started
     players:            (p.serialize() for p in @players)
     currentPlayerName:  @currentPlayer?.name
     turn:               @turn
@@ -245,6 +252,7 @@ class Hanabi
   @load: (data) ->
     console.log 'Hanabi.load', data
     hanabi                    = new Hanabi
+    hanabi.started            = data.started
     hanabi.players            = (Player.load p for p in data.players)
     hanabi.currentPlayer      = hanabi.login(data.currentPlayerName) if data.currentPlayerName
     hanabi.turn               = data.turn
@@ -318,6 +326,7 @@ class HanabiRoom
   restore: (data) ->
     console.log 'restore', data
     @hanabi = Hanabi.load data
+    @hanabi.listenPlayerEvents()
     unless @initialized
       @initialized = yes
       @hanabiInitializedCallback()
@@ -350,21 +359,27 @@ angular.module('hanabiApp')
       $scope.hanabiRoom.hanabi.start()
       $scope.hanabiRoom.sync()
 
-    $scope.play = (player, card) ->
-      player.play(card)
+    $scope.play = (card) ->
+      $scope.hanabiRoom.hanabi.player($scope.playerName).play card
+      $scope.hanabiRoom.sync()
 
-    $scope.playRainbow = (player, card, color) ->
+    $scope.playRainbow = (card, color) ->
       console.log 'rainbow', color
-      player.play(card, color)
+      $scope.hanabiRoom.hanabi.player($scope.playerName).play card, color
+      $scope.hanabiRoom.sync()
 
-    $scope.discard = (player, card) ->
-      player.discard(card)
+    $scope.discard = (card) ->
+      console.log 'discard', $scope.playerName
+      $scope.hanabiRoom.hanabi.player($scope.playerName).discard card
+      $scope.hanabiRoom.sync()
 
     $scope.tellColor = (other, color) ->
-      $scope.game.currentPlayer.tellColor other, color
+      $scope.hanabiRoom.hanabi.player($scope.playerName).tellColor other, color
+      $scope.hanabiRoom.sync()
 
     $scope.tellNumber = (other, number) ->
-      $scope.game.currentPlayer.tellNumber other, number
+      $scope.hanabiRoom.hanabi.player($scope.playerName).tellNumber other, number
+      $scope.hanabiRoom.sync()
 
     # card = player.cards[0]
     # player.play card
