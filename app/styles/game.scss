@@ -1,6 +1,16 @@
+.fireworks {
+  float: left;
+}
+
+.clear {
+  clear: both;
+}
+
 .card {
   display: inline-block;
+}
 
+.card.player-false {
   .card-x {
     background: black;
   }

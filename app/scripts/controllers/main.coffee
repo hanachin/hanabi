@@ -73,15 +73,16 @@ class Player
   isRemembered: (card) ->
     _.some @rememberedCards, (c) -> c.id is card.id
 
-  remember: (memory) ->
-    @rememberedCards.push memory.card unless @isRemembered memory.card
-    @trigger 'remember', memory
+  remember: (cards) ->
+    @rememberedCards.push card for card in cards when not @isRemembered card
 
   rememberColor: ({cards, color}) ->
-    @remember card: card, color: color for card in cards
+    @remember cards
+    @trigger 'rememberColor', @name, cards
 
   rememberNumber: ({cards, number}) ->
-    @remember card: card, number: number for card in cards
+    @remember cards
+    @trigger 'rememberNumber', @name, cards
 
   trigger: (eventName, rest...) ->
     callback rest... for callback in (@callbacks[eventName] ? [])
@@ -172,7 +173,7 @@ class Hanabi
     @nextTurn()
 
   listenPlayerEvents: ->
-    player.on eventName, _.bind @[eventName], @ for eventName in ['play', 'discard', 'hint'] for player in @players
+    player.on eventName, _.bind @[eventName], @ for eventName in ['play', 'discard', 'hint', 'rememberColor', 'rememberNumber'] for player in @players
 
   deal: ->
     player.takeCard @deck for _ in [1..4] for player in @players
@@ -207,6 +208,10 @@ class Hanabi
 
   loseHint: ->
     @hints = @hints - 1
+
+  rememberColor: (playerName, cards) ->
+
+  rememberNumber: (playerName, cards) ->
 
   fire: (card, color) ->
     return @fireworks[color].push(card) if (!@isFireworksStared(color) && card.number is 1) || @lastFireworks(color)?.number is card.number - 1
