@@ -10,6 +10,15 @@ class Color
 
   @SINGLE_COLORS: [@RED, @GREEN, @WHITE, @YELLOW, @BLUE]
 
+  @label: (color) ->
+    switch color
+      when @RAINBOW then 'にじいろ'
+      when @RED     then 'あか'
+      when @GREEN   then 'みどり'
+      when @WHITE   then 'しろ'
+      when @YELLOW  then 'しろ'
+      when @BLUE    then 'あお'
+
 class Card
   constructor: ({@color, @number}) ->
     @id = "#{@color}#{@number}"
