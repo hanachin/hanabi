@@ -183,6 +183,7 @@ class Hanabi
       @explosions = @explosions + 1
       throw explosion if Hanabi.MAX_EXPLOSION <= @explosions
     player.takeCard @deck unless @deck.isEmpty()
+    @message = ''
     @nextTurn()
 
   discard: (playerName, card) ->
@@ -192,6 +193,7 @@ class Hanabi
     console.log @discardedFireworks
     @recoverHints()
     player.takeCard @deck unless @deck.isEmpty()
+    @message = ''
     @nextTurn()
 
   hint: (playerName, method, hintVal) ->
@@ -239,7 +241,6 @@ class Hanabi
     @currentPlayer = @nextPlayer()
     @currentPlayer.trigger 'turn'
     @turn = @turn + 1
-    @message = ''
 
   lastTurnCountUp: ->
     @lastTurnCount = @lastTurnCount + 1
