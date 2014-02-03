@@ -12,7 +12,9 @@
     "angular-sanitize": "1.2.6",
     "angular-route": "1.2.6",
     "underscore": "~1.5.2",
-    "angular-bootstrap": "~0.10.0"
+    "angular-bootstrap": "~0.10.0",
+    "angular-pubnub": "~0.0.8",
+    "pubnub": "*"
   },
   "devDependencies": {
     "angular-mocks": "1.2.6",

@@ -1,48 +1,55 @@
 'use strict'
 
 class Color
-  @RAINBOW: 'rainbow'
-  @RED:     'red'
-  @GREEN:   'green'
-  @WHITE:   'white'
-  @YELLOW:  'yellow'
-  @BLUE:    'blue'
+  @RAINBOW: 'x'
+  @RED:     'r'
+  @GREEN:   'g'
+  @WHITE:   'w'
+  @YELLOW:  'y'
+  @BLUE:    'b'
 
   @SINGLE_COLORS: [@RED, @GREEN, @WHITE, @YELLOW, @BLUE]
 
 class Card
   constructor: ({@color, @number}) ->
+    @id = "#{@color}#{@number}"
 
   isRainbow: ->
     @color is Color.RAINBOW
+
+  serialize: ->
+    @id
+
+  @load: (id) ->
+    new Card color: id[0], number: +id[1..]
 
 class Player
   constructor: ({@name}) ->
     @playable          = no
     @cards             = []
-    @others            = []
     @rememberedCards   = []
     @callbacks         = []
 
     @on 'turn', ({@canHints}) =>
       @playable = yes
 
-  discover: (other) ->
-    @others.push other
-
   takeCard: (deck) ->
-    @cards.push deck.takeCard()
+    card = deck.takeCard()
+    @cards.push card
+    @trigger 'takeCard', @name, card
 
   play: (card, color = card.color) ->
     @playable        = no
-    @cards           = _.without(@cards, card)
-    @rememberedCards = _.without(@rememberedCards, card)
-    @trigger 'play', @, card, color
+    @cards           = _.reject(@cards, (c) -> c.id is card.id)
+    @rememberedCards = _.reject(@rememberedCards, (c) -> c.id is card.id)
+    @trigger 'play', @name, card, color
 
   discard: (card) ->
+    console.log 'Player#discard', card, @cards
     @playable = no
-    @cards    = _.without(@cards, card)
-    @trigger 'discard', @, card
+    @cards    = _.reject(@cards, (c) -> c.id is card.id)
+    console.log 'Player#discard after', card, @cards
+    @trigger 'discard', @name, card
 
   tellColor: (other, color) ->
     cards = _.select other.cards, (card) -> card.color is color || card.color is Color.RAINBOW
@@ -55,7 +62,7 @@ class Player
     @trigger 'hint'
 
   isRemembered: (card) ->
-    _.contains @rememberedCards, card
+    _.some @rememberedCards, (c) -> c.id is card.id
 
   remember: (memory) ->
     @rememberedCards.push memory.card unless @isRemembered memory.card
@@ -80,6 +87,20 @@ class Player
     @callbacks[eventName] ?= []
     @callbacks[eventName].push callback
 
+  serialize: ->
+    name:            @name
+    playable:        @playable
+    cards:           (c.serialize() for c in @cards)
+    rememberedCards: (c.serialize() for c in @cards)
+
+  @load: (data) ->
+    console.log 'Player.load', data
+    player = new Player name: data.name
+    player.playable        = data.playable
+    player.cards           = (Card.load card for card in data.cards)
+    player.rememberedCards = (Card.load card for card in data.rememberedCards)
+    player
+
 class Deck
   constructor: ->
     @cards = []
@@ -98,6 +119,14 @@ class Deck
   isEmpty: ->
     @cards.length is 0
 
+  serialize: ->
+    (c.serialize() for c in @cards)
+
+  @load: (cards) ->
+    deck = new Deck
+    deck.cards = (Card.load card for card in cards)
+    deck
+
 class ExplosionError extends Error
   constructor: ->
 
@@ -108,24 +137,30 @@ class Hanabi
   @MAX_EXPLOSION: 3
   @MAX_HINT:      8
 
-  constructor: ({@players}) ->
+  constructor: (options = {}) ->
+    {@players} = options
+    @players            ||= []
     @turn               = 0
     @deck               = new Deck
+    @deck.shuffle()
     @hints              = Hanabi.MAX_HINT
     @explosions         = 0
     @fireworks          = _.object Color.SINGLE_COLORS, ([] for _i in [1..Color.SINGLE_COLORS.length])
     @lastTurnCount      = 0
     @discardedFireworks = []
 
+  login: (name) ->
+    return player if (player = @player name)
+    @players.push new Player name: name
+
+  player: (name) ->
+    _.find(@players, (player) -> player.name is name)
+
   start: ->
-    @discoverEachOther()
+    @started = yes
     @listenPlayerEvents()
-    @deck.shuffle()
     @deal()
     @nextTurn()
-
-  discoverEachOther: ->
-    player.discover other for other in @players when other isnt player for player in @players
 
   listenPlayerEvents: ->
     player.on eventName, _.bind @[eventName], @ for eventName in ['play', 'discard', 'hint'] for player in @players
@@ -133,7 +168,8 @@ class Hanabi
   deal: ->
     player.takeCard @deck for _ in [1..4] for player in @players
 
-  play: (player, card, color) ->
+  play: (playerName, card, color) ->
+    player = @player playerName
     try
       @fire card, color
       @recoverHints() if @isFireworksFinished(color)
@@ -147,8 +183,11 @@ class Hanabi
     player.takeCard @deck unless @deck.isEmpty()
     @nextTurn()
 
-  discard: (player, card) ->
+  discard: (playerName, card) ->
+    player = @player playerName
+    console.log 'Hanabi#discard', player.name, card
     @discardedFireworks.push card
+    console.log @discardedFireworks
     @recoverHints()
     player.takeCard @deck unless @deck.isEmpty()
     @nextTurn()
@@ -192,29 +231,155 @@ class Hanabi
   lastTurnCountUp: ->
     @lastTurnCount = @lastTurnCount + 1
 
+  serialize: ->
+    console.log 'Hanabi#serialize'
+
+    # [XXX] - あとでFireworksクラス作ってserialize呼ぶだけにしたい
+    fireworks = {}
+    fireworks[k] = (c.serialize() for c in @fireworks[k]) for k, v of @fireworks
+
+    started:            @started
+    players:            (p.serialize() for p in @players)
+    currentPlayerName:  @currentPlayer?.name
+    turn:               @turn
+    deck:               @deck.serialize()
+    hints:              @hints
+    explosions:         @explosions
+    fireworks:          fireworks
+    lastTurnCount:      @lastTurnCount
+    discardedFireworks: (c.serialize() for c in @discardedFireworks)
+
+  @load: (data) ->
+    console.log 'Hanabi.load', data
+    hanabi                    = new Hanabi
+    hanabi.started            = data.started
+    hanabi.players            = (Player.load p for p in data.players)
+    hanabi.currentPlayer      = hanabi.login(data.currentPlayerName) if data.currentPlayerName
+    hanabi.turn               = data.turn
+    hanabi.deck               = Deck.load data.deck
+    hanabi.hints              = data.hints
+    hanabi.explosions         = data.explosions
+    hanabi.fireworks          = {}
+    hanabi.fireworks[color]   = (Card.load c for c in data.fireworks[color]) for color in Color.SINGLE_COLORS
+    hanabi.lastTurnCount      = data.lastTurnCount
+    hanabi.discardedFireworks = (Card.load c for c in data.discardedFireworks)
+    hanabi
+
+class HanabiRoom
+  constructor: (@PubNub, @roomName) ->
+    @initialized = no
+    @connected   = no
+    @PubNub.subscribe
+      channel: @roomName
+      restore: no
+      disconnect: ->
+        console.log 'PubNub disconnected'
+      reconnect: ->
+        console.log 'PubNub re-connected'
+      connect: =>
+        console.log 'PubNub connected'
+        @connected = yes
+
+    , ({eventName, data}) =>
+      console.log 'event', eventName, data
+      switch eventName
+        when 'ping' then @pong() && @sync()
+        when 'pong' then @clearHanabiSetupTimeoutId()
+        when 'sync' then @restore(data)
+
+  clearHanabiSetupTimeoutId: ->
+    console.log 'clearHanabiSetupTimeoutId'
+    clearTimeout @hanabiSetupTimeoutId if @hanabiSetupTimeoutId
+
+  connect: (@hanabiInitializedCallback) ->
+    console.log 'connect'
+    @connectIntervalId = setInterval =>
+      console.log 'connect interval'
+      return unless @connected
+      clearInterval @connectIntervalId
+      @hanabiSetupTimeoutId = setTimeout =>
+        console.log 'connect timeout'
+        @setup()
+        @hanabiInitializedCallback()
+      , 1000
+      @ping()
+    , 100
+
+  ping: ->
+    console.log 'ping'
+    @publish 'ping'
+
+  pong: ->
+    return unless @initialized
+    console.log 'pong'
+    @publish 'pong'
+    yes
+
+  sync: ->
+    @publish 'sync', @hanabi.serialize()
+
+  setup: ->
+    console.log 'setup'
+    @initialized = yes
+    @hanabi = new Hanabi
+
+  restore: (data) ->
+    console.log 'restore', data
+    @hanabi = Hanabi.load data
+    @hanabi.listenPlayerEvents()
+    unless @initialized
+      @initialized = yes
+      @hanabiInitializedCallback()
+
+  publish: (eventName, data) ->
+    console.log 'publish', eventName, data
+    @PubNub.publish
+      channel: @roomName
+      message: { eventName: eventName, data: data }
+
 angular.module('hanabiApp')
-  .controller 'MainCtrl', ($scope) ->
+  .controller 'MainCtrl', ($scope, $PubNub) ->
     $scope.Color = Color
 
+    $scope.roomName    = 'geeaki'
+    $scope.playerName  = 'hanachin'
+    $scope.loggedIn    = no
+
+    $scope.login = ->
+      return if $scope.loggedIn
+      console.log '$scope.login'
+      $scope.loggedIn = yes
+      $scope.hanabiRoom = new HanabiRoom $PubNub, $scope.roomName
+      $scope.hanabiRoom.connect ->
+        $scope.$apply ->
+          $scope.hanabiRoom.hanabi.login $scope.playerName
+          $scope.hanabiRoom.sync()
+
     $scope.start = ->
-      $scope.game = new Hanabi players: (new Player name: "player#{x}" for x in [1..4])
-      $scope.game.start()
+      $scope.hanabiRoom.hanabi.start()
+      $scope.hanabiRoom.sync()
 
-    $scope.play = (player, card) ->
-      player.play(card)
+    $scope.play = (card) ->
+      $scope.hanabiRoom.hanabi.player($scope.playerName).play card
+      $scope.hanabiRoom.sync()
 
-    $scope.playRainbow = (player, card, color) ->
+    $scope.playRainbow = (card, color) ->
       console.log 'rainbow', color
-      player.play(card, color)
+      $scope.hanabiRoom.hanabi.player($scope.playerName).play card, color
+      $scope.hanabiRoom.sync()
 
-    $scope.discard = (player, card) ->
-      player.discard(card)
+    $scope.discard = (card) ->
+      console.log 'discard', $scope.playerName
+      $scope.hanabiRoom.hanabi.player($scope.playerName).discard card
+      $scope.hanabiRoom.sync()
 
     $scope.tellColor = (other, color) ->
-      $scope.game.currentPlayer.tellColor other, color
+      $scope.hanabiRoom.hanabi.player($scope.playerName).tellColor other, color
+      $scope.hanabiRoom.sync()
 
     $scope.tellNumber = (other, number) ->
-      $scope.game.currentPlayer.tellNumber other, number
+      $scope.hanabiRoom.hanabi.player($scope.playerName).tellNumber other, number
+      $scope.hanabiRoom.sync()
 
     # card = player.cards[0]
     # player.play card
