@@ -80,7 +80,7 @@ class Player
     callback rest... for callback in (@callbacks[eventName] ? [])
 
   cardColors: ->
-    _.uniq(_.map(@cards, (c) -> c.color))
+    _.reject(_.uniq(_.map(@cards, (c) -> c.color)), (c) -> c.color is Color.RAINBOW)
 
   cardNumbers: ->
     _.uniq(_.map(@cards, (c) -> c.number))
