@@ -358,8 +358,8 @@ angular.module('hanabiApp')
   .controller 'MainCtrl', ($scope, $PubNub) ->
     $scope.Color = Color
 
-    $scope.roomName    = 'geeaki'
-    $scope.playerName  = 'hanachin'
+    $scope.roomName    = 'room' + Math.floor Math.random() * 100
+    $scope.playerName  = 'user' + Math.floor Math.random() * 100
     $scope.loggedIn    = no
 
     $scope.login = ->
