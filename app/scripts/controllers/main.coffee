@@ -30,7 +30,7 @@ class Player
     @rememberedCards   = []
     @callbacks         = []
 
-    @on 'turn', ({@canHints}) =>
+    @on 'turn', =>
       @playable = yes
 
   takeCard: (deck) ->
@@ -225,7 +225,7 @@ class Hanabi
     @lastTurnCountUp() if @deck.isEmpty()
     throw GameOverError if @isGameOver()
     @currentPlayer = @nextPlayer()
-    @currentPlayer.trigger 'turn', canHints: @hints isnt 0
+    @currentPlayer.trigger 'turn'
     @turn = @turn + 1
 
   lastTurnCountUp: ->

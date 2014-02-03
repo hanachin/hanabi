@@ -32,7 +32,7 @@
 
 <div class="row marketing">
   <p ng-hide="!hanabiRoom.hanabi">
-    ヒント: {{hanabiRoom.hanabi.hints}}、爆発: {{hanabiRoom.hanabi.explosions}}回
+    ヒント: {{hanabiRoom.hanabi.hints}}、爆発: {{hanabiRoom.hanabi.explosions}}回、残り: {{hanabiRoom.hanabi.deck.cards.length}}枚
   </p>
   <div ng-hide="cards.length == 0" ng-repeat="(color, cards) in hanabiRoom.hanabi.fireworks">
     <h2>{{color}}</h2>
@@ -57,9 +57,9 @@
   <div ng-repeat="player in hanabiRoom.hanabi.players">
     <h4>{{player.name}}</h4>
     <p>
-      <div ng-hide="!hanabiRoom.hanabi.currentPlayer.canHints || playerName != hanabiRoom.hanabi.currentPlayer.name">
-        <span class="btn btn-default" ng-repeat="color in player.cardColors()" ng-click="tellColor(player, color)">「{{color}}」を教える</span>
-        <span class="btn btn-default" ng-repeat="number in player.cardNumbers()" ng-click="tellNumber(player, number)">「{{number}}」を教える</span>
+      <div ng-hide="hanabiRoom.hanabi.hints == 0 || playerName == player.name">
+        <span class="btn btn-default" ng-repeat="color in player.cardColors()" ng-click="tellColor(player, color)" ng-disabled="hanabiRoom.hanabi.currentPlayer.name != player.name">「{{color}}」を教える</span>
+        <span class="btn btn-default" ng-repeat="number in player.cardNumbers()" ng-click="tellNumber(player, number)" ng-disabled="hanabiRoom.hanabi.currentPlayer.name != player.name">「{{number}}」を教える</span>
       </div>
       <ul>
         <li class="card" ng-repeat="card in player.cards">
