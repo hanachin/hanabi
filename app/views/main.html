@@ -63,12 +63,12 @@
     <h4>{{player.name}}</h4>
     <p>
       <div ng-hide="hanabiRoom.hanabi.hints == 0 || playerName == player.name">
-        <span class="btn btn-default" ng-disabled="hanabiRoom.hanabi.currentPlayer.name != playerName" ng-repeat="color in player.cardColors()" ng-click="tellColor(player, color)">「{{Color.label(color)}}」を教える</span>
+        <span class="btn btn-default" ng-disabled="hanabiRoom.hanabi.currentPlayer.name != playerName" ng-hide="color == Color.RAINBOW" ng-repeat="color in player.cardColors()" ng-click="tellColor(player, color)">「{{Color.label(color)}}」を教える</span>
         <span class="btn btn-default" ng-disabled="hanabiRoom.hanabi.currentPlayer.name != playerName" ng-repeat="number in player.cardNumbers()" ng-click="tellNumber(player, number)">「{{number}}」を教える</span>
       </div>
       <ul>
         <li class="card player-{{playerName == player.name}}" ng-repeat="card in player.cards">
-          <div class="btn btn-default card-{{card.color}}" ng-disabled="!player.playable">
+          <div class="btn btn-default card-{{card.color}}" ng-disabled="hanabiRoom.hanabi.currentPlayer.name != playerName">
             <span ng-hide="player.name == playerName">{{card.number}}</span>
             <div ng-hide="player.name != playerName">
               <div ng-hide="card.isRainbow()">

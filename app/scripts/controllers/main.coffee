@@ -24,6 +24,7 @@ class Card
     @id = "#{@color}#{@number}"
 
   isRainbow: ->
+    console.log @color, Color.RAINBOW
     @color is Color.RAINBOW
 
   serialize: ->
@@ -61,7 +62,7 @@ class Player
     @trigger 'discard', @name, card
 
   tellColor: (other, color) ->
-    cards = _.select other.cards, (card) -> card.color is color || card.color is Color.RAINBOW
+    cards = _.select(other.cards, (card) -> card.color is color || card.isRainbow())
     other.remember cards
     @trigger 'hint', other.name, 'color', color
 
@@ -80,7 +81,7 @@ class Player
     callback rest... for callback in (@callbacks[eventName] ? [])
 
   cardColors: ->
-    _.reject(_.uniq(_.map(@cards, (c) -> c.color)), (c) -> c.color is Color.RAINBOW)
+    _.uniq(_.map(@cards, (c) -> c.color))
 
   cardNumbers: ->
     _.uniq(_.map(@cards, (c) -> c.number))
@@ -205,7 +206,7 @@ class Hanabi
     @nextTurn()
 
   showColorHint: (player, color) ->
-    @message = "#{player.name}の" + ("左から#{i+1}番目" for card, i in player.cards when card.color is color).join('、') + "が#{Color.label(color)}です"
+    @message = "#{player.name}の" + ("左から#{i+1}番目" for card, i in player.cards when (card.color is color || card.isRainbow())).join('、') + "が#{Color.label(color)}です"
 
   showNumberHint: (player, number) ->
     @message = "#{player.name}の" + ("左から#{i+1}番目" for card, i in player.cards when card.number is number).join('、') + "が#{number}です"
