@@ -40,13 +40,14 @@ class Player
 
   play: (card, color = card.color) ->
     @playable        = no
-    @cards           = _.without(@cards, card)
-    @rememberedCards = _.without(@rememberedCards, card)
+    @cards           = _.without(@cards, (c) -> c.id is card.id)
+    @rememberedCards = _.without(@rememberedCards, (c) -> c.id is card.id)
     @trigger 'play', @, card, color
 
   discard: (card) ->
+    console.log 'Player#discard', card
     @playable = no
-    @cards    = _.without(@cards, card)
+    @cards    = _.without(@cards, (c) -> c.id is card.id)
     @trigger 'discard', @, card
 
   tellColor: (other, color) ->
@@ -60,7 +61,7 @@ class Player
     @trigger 'hint'
 
   isRemembered: (card) ->
-    _.contains @rememberedCards, card
+    _.contains @rememberedCards, (c) -> c.id is card.id
 
   remember: (memory) ->
     @rememberedCards.push memory.card unless @isRemembered memory.card
@@ -148,8 +149,11 @@ class Hanabi
     @discardedFireworks = []
 
   login: (name) ->
-    return player if (player = _.find(@players, (p) -> p.name is name))
+    return player if (player = @player name)
     @players.push new Player name: name
+
+  player: (name) ->
+    _.find(@players, (player) -> player.name is name)
 
   start: ->
     @listenPlayerEvents()
