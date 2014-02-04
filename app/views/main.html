@@ -32,7 +32,9 @@
   </p>
 </div>
 
-<div class="row marketing">
+<h1 ng-hide="!hanabiRoom.hanabi.isGameOver()">ゲームオーバー</h1>
+
+<div class="row marketing" ng-hide="hanabiRoom.hanabi.isGameOver()">
   <p ng-hide="!hanabiRoom.hanabi.started">
     ヒント: {{hanabiRoom.hanabi.hints}}、爆発: {{hanabiRoom.hanabi.explosions}}回、残り: {{hanabiRoom.hanabi.deck.cards.length}}枚<br/>
     プレイヤー: <span ng-hide="!hanabiRoom.hanabi.started" ng-repeat="player in hanabiRoom.hanabi.players">{{player.name}}、</span>

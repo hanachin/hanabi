@@ -205,7 +205,7 @@ class Hanabi
       console.log 'explosion', explosion
       @discardedFireworks.push card
       @explosions = @explosions + 1
-      throw explosion if Hanabi.MAX_EXPLOSION <= @explosions
+      throw new GameOverError if Hanabi.MAX_EXPLOSION <= @explosions
     player.takeCard @deck unless @deck.isEmpty()
     @message = ''
     @nextTurn()
@@ -248,7 +248,7 @@ class Hanabi
     @fireworks[color].length is 5
 
   isGameOver: ->
-    @lastTurnCount >= @players.length
+    @lastTurnCount >= @players.length || @explosions >= Hanabi.MAX_EXPLOSION
 
   lastFireworks: (color) ->
     _.last @fireworks[color]
@@ -400,8 +400,10 @@ angular.module('hanabiApp')
       $scope.hanabiRoom.sync()
 
     $scope.play = (card) ->
-      $scope.hanabiRoom.hanabi.player($scope.playerName).play card
-      $scope.hanabiRoom.sync()
+      try
+        $scope.hanabiRoom.hanabi.player($scope.playerName).play card
+      finally
+        $scope.hanabiRoom.sync()
 
     $scope.playRainbow = (card, color) ->
       console.log 'rainbow', color
