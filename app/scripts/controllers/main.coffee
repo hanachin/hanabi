@@ -16,7 +16,7 @@ class Color
       when @RED     then 'あか'
       when @GREEN   then 'みどり'
       when @WHITE   then 'しろ'
-      when @YELLOW  then 'しろ'
+      when @YELLOW  then 'きいろ'
       when @BLUE    then 'あお'
 
 class Card
