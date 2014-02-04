@@ -50,14 +50,37 @@ class Player
 
   play: (card, color = card.color) ->
     @playable        = no
-    @cards           = _.reject(@cards, (c) -> c.id is card.id)
-    @rememberedCards = _.reject(@rememberedCards, (c) -> c.id is card.id)
+
+    rejected = no
+    @cards           = _.reject @cards, (c) ->
+      return no if rejected
+      if c.id is card.id
+        rejected = yes
+        return yes
+      no
+
+    rejected = no
+    @rememberedCards = _.reject @rememberedCards, (c) ->
+      return no if rejected
+      if c.id is card.id
+        rejected = yes
+        return yes
+      no
+
     @trigger 'play', @name, card, color
 
   discard: (card) ->
     console.log 'Player#discard', card, @cards
     @playable = no
-    @cards    = _.reject(@cards, (c) -> c.id is card.id)
+
+    rejected = no
+    @cards    = _.reject @cards, (c) ->
+      return no if rejected
+      if c.id is card.id
+        rejected = yes
+        return yes
+      no
+
     console.log 'Player#discard after', card, @cards
     @trigger 'discard', @name, card
 
