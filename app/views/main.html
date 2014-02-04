@@ -82,7 +82,7 @@
                 <span class="btn btn-default" ng-click="discard(card)">捨てる</span>
                 <ul class="dropdown-menu">
                   <li ng-repeat="color in Color.SINGLE_COLORS">
-                    <a ng-click="playRainbow(card, color)">{{color}}</a>
+                    <a ng-click="playRainbow(card, color)">{{Color.label(color)}}</a>
                   </li>
                 </ul>
               </div>
